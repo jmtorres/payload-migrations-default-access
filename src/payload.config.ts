@@ -18,7 +18,7 @@ import { getServerSideURL } from './utilities/getURL'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-export default buildConfig({
+const config = buildConfig({
   admin: {
     components: {
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
@@ -90,3 +90,17 @@ export default buildConfig({
     tasks: [],
   },
 })
+
+// Variant switch for the reproduction. `MIGRATIONS_ACCESS=closed` applies the
+// proposed fix after sanitize (the only place a project can reach this
+// collection): every access function on `payload-migrations` returns false.
+const closeMigrations = async (sanitized: Awaited<typeof config>) => {
+  if (process.env.MIGRATIONS_ACCESS !== 'closed') return sanitized
+  const migrations = sanitized.collections.find((c) => c.slug === 'payload-migrations')
+  if (!migrations) throw new Error('payload-migrations collection missing')
+  const deny = () => false
+  migrations.access = { ...migrations.access, create: deny, delete: deny, read: deny, update: deny }
+  return sanitized
+}
+
+export default config.then(closeMigrations)

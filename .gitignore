@@ -20,3 +20,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# sqlite database for the reproduction
+*.db
+*.db-journal
